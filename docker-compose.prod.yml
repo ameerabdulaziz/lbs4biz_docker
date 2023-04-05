@@ -1,0 +1,48 @@
+version: "3.5"
+
+services:
+  web:
+    build: .
+    image: ameerabdulaziz/lbs4biz_test
+    container_name: lbs4biz_test_web
+    working_dir: /app/lbs4biz
+    command:  bash -c "service mosquitto start && gunicorn lbs4biz.wsgi:application --bind 0.0.0.0:8000"
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql-db
+      - postgres-db
+
+  redis:
+    image: redis:alpine
+    container_name: lbs4biz_test_redis
+
+  celery:
+    build: .
+    container_name: lbs4biz_test_celery
+    working_dir: /app/lbs4biz
+    command: bash -c "service mosquitto start && celery -A lbs4biz worker -l INFO"
+#    command: celery -A lbs4biz worker -l INFO
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - web
+
+  celery-beat:
+    build: .
+    container_name: lbs4biz_test_celery-beat
+    working_dir: /app/lbs4biz
+    command: bash -c "service mosquitto start && celery -A lbs4biz beat -l INFO"
+#    command: celery -A lbs4biz worker -l INFO
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - web
