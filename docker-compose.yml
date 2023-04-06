@@ -2,13 +2,15 @@ version: "3.5"
 
 services:
   mysql-db:
-    image: mysql:5.6
+          #    image: mysql:5.6
+    image: hsheth2/mysql-low-memory:5.6
     container_name: lbs4biz_test_mysql
     env_file:
       - .env
     ports:
       - "3306:3306"
     volumes:
+      - ./setup.sql:/docker-entrypoint-initdb.d/setup.sql
       - mysql_data:/var/lib/mysql
 
   postgres-db:
@@ -16,8 +18,6 @@ services:
     container_name: lbs4biz_test_postgres
     env_file:
       - .env
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/mysql
 
@@ -26,13 +26,14 @@ services:
     image: ameerabdulaziz/lbs4biz_test
     container_name: lbs4biz_test_web
     working_dir: /app/lbs4biz
-#    command:  bash -c "service mosquitto start && python manage.py runserver 0.0.0.0:8000"
-    command:  bash -c "service mosquitto start && python manage.py collectstatic && gunicorn lbs4biz.wsgi:application --bind 0.0.0.0:8000"
+    # command:  bash -c "service mosquitto start && python manage.py runserver 0.0.0.0:8000"
+    command:  bash -c "service mosquitto start && gunicorn lbs4biz.wsgi:application --bind 0.0.0.0:8000"
 #    command: python manage.py runserver 0.0.0.0:8000
     env_file:
       - .env
     volumes:
       - .:/app/
+      - static_volume:/tmp/lbs4biz/
 #    ports:
 #      - "8000:8000"
     expose:
@@ -48,41 +49,11 @@ services:
       - "80:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/tmp/lbs4biz/
     depends_on:
-      - web
-
-  redis:
-    image: redis:alpine
-    container_name: lbs4biz_test_redis
-
-  celery:
-    build: .
-    container_name: lbs4biz_test_celery
-    working_dir: /app/lbs4biz
-    command: bash -c "service mosquitto start && celery -A lbs4biz worker -l INFO"
-#    command: celery -A lbs4biz worker -l INFO
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-    depends_on:
-      - redis
-      - web
-
-  celerybeat:
-    build: .
-    container_name: lbs4biz_test_celerybeat
-    working_dir: /app/lbs4biz
-    command: bash -c "service mosquitto start && celery -A lbs4biz beat -l INFO"
-#    command: celery -A lbs4biz worker -l INFO
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-    depends_on:
-      - redis
       - web
 
 volumes:
   mysql_data:
   postgres_data:
+  static_volume:
