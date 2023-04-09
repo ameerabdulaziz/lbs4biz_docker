@@ -56,4 +56,7 @@ services:
 volumes:
   mysql_data:
   postgres_data:
+<<<<<<< HEAD
   static_volume:
+=======
+>>>>>>> 019a5bc74e6fe47ce08cd3723e935e52b7e15e16
